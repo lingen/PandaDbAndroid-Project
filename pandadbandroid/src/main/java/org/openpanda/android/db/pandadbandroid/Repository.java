@@ -153,6 +153,57 @@ public class Repository {
         return false;
     }
 
+    public boolean executeUpdate(String sql){
+        return executeUpdate(sql,null);
+    }
+
+    public boolean executeUpdate(String sql,String[] params){
+
+        boolean beginTransaction = false;
+        if (!sqLiteManager.isInTransaction()){
+            beginTransaction = true;
+            sqLiteManager.beginTransaction();
+        }
+
+        boolean success = sqLiteManager.executeUpdate(sql,params);
+
+        if (beginTransaction){
+            sqLiteManager.endTransaction();
+        }
+        return success;
+    }
+
+    public Map<String,Object> executeSingleQuery(String sql){
+        return executeSingleQuery(sql,null);
+    }
+
+    public Map<String,Object> executeSingleQuery(String sql,String[] params){
+        List<Map<String,Object>> results = executeQuery(sql,params);
+        if (results!=null && results.size() > 0) {
+            return results.get(0);
+        }
+        return null;
+    }
+
+    public List<Map<String,Object>> executeQuery(String sql){
+        return executeQuery(sql,null);
+    }
+
+    public List<Map<String,Object>> executeQuery(String sql,String[] params){
+        boolean beginTransaction = false;
+        if (!sqLiteManager.isInTransaction()){
+            beginTransaction = true;
+            sqLiteManager.beginTransaction();
+        }
+
+        List<Map<String,Object>> results = sqLiteManager.executeQuery(sql,params);
+
+        if (beginTransaction){
+            sqLiteManager.endTransaction();
+        }
+
+        return results;
+    }
 
 
 }

@@ -21,7 +21,7 @@ public class SQLiteManager {
 
     private String dbName;
 
-    private Boolean inTransaction;
+    private boolean inTransaction;
 
     private Context context;
 
@@ -48,20 +48,22 @@ public class SQLiteManager {
 
     public void beginTransaction(){
         sqLiteOpenHelper.getWritableDatabase().beginTransaction();
+        inTransaction = true;
     }
 
     public void endTransaction(){
         sqLiteOpenHelper.getWritableDatabase().setTransactionSuccessful();
         sqLiteOpenHelper.getWritableDatabase().endTransaction();
+        inTransaction = false;
     }
 
     public void rollbackTransaction(){
         sqLiteOpenHelper.getWritableDatabase().endTransaction();
+        inTransaction = false;
     }
 
     public static SQLiteManager createInstance(Context context,String dbName) {
         SQLiteManager sqLiteManager = new SQLiteManager(dbName, context);
-
         return sqLiteManager;
     }
 
@@ -137,5 +139,9 @@ public class SQLiteManager {
         }
 
 
+    }
+
+    public boolean isInTransaction() {
+        return inTransaction;
     }
 }
