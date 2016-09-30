@@ -13,7 +13,6 @@ import java.util.Map;
 public class Repository {
 
 
-
     private static String CREATE_VERSION_TABLE = "create table if not exists panda_version_ (value_ int not null)";
 
     private static String INIT_VERSION_TABLE_CONTENT = "insert into panda_version_ (value_) values (:value)";
@@ -189,21 +188,45 @@ public class Repository {
         return executeQuery(sql,null);
     }
 
-    public List<Map<String,Object>> executeQuery(String sql,String[] params){
+    public List<Map<String,Object>> executeQuery(final String sql,final String[] params){
+
+        return inTransactionBlock(new InTransactionWrap() {
+            @Override
+            public Object executeInTransaction() {
+                List<Map<String,Object>> results = sqLiteManager.executeQuery(sql,params);
+                return results;
+            }
+        },List.class);
+    }
+
+
+    public boolean executeInTransaction(final RepositoryBlock block){
+        return inTransactionBlock(new InTransactionWrap() {
+            @Override
+            public Object executeInTransaction() {
+                return block.execute();
+            }
+        },Boolean.class);
+    }
+
+
+    private <T> T inTransactionBlock(InTransactionWrap inTransactionWrap,Class<T> c){
         boolean beginTransaction = false;
         if (!sqLiteManager.isInTransaction()){
             beginTransaction = true;
             sqLiteManager.beginTransaction();
         }
 
-        List<Map<String,Object>> results = sqLiteManager.executeQuery(sql,params);
+        Object object = inTransactionWrap.executeInTransaction();
 
         if (beginTransaction){
             sqLiteManager.endTransaction();
         }
 
-        return results;
+        return (T)object;
     }
 
-
+    interface InTransactionWrap{
+        Object executeInTransaction();
+    }
 }

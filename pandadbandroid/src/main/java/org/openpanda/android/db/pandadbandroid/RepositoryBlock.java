@@ -6,6 +6,6 @@ package org.openpanda.android.db.pandadbandroid;
 
 public interface RepositoryBlock {
 
-    void execute();
+    boolean execute();
 
 }
