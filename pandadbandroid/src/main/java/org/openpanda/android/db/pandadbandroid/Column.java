@@ -10,7 +10,7 @@ import java.io.Serializable;
 public class Column extends Object implements Serializable{
 
 
-    private static String NOT_NULL = "not null ";
+    private static String NOT_NULL = " NOT NULL ";
 
 
     /**
