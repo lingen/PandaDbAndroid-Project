@@ -2,7 +2,9 @@ package org.openpanda.android.db.pandadbandroid;
 
 import android.content.Context;
 import android.util.Log;
+import android.util.StringBuilderPrinter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -156,15 +158,19 @@ public class Repository {
         return executeUpdate(sql,null);
     }
 
-    public boolean executeUpdate(String sql,String[] params){
+    public boolean executeUpdate(String sql,SQLParam sqlParam){
 
         boolean beginTransaction = false;
         if (!sqLiteManager.isInTransaction()){
             beginTransaction = true;
             sqLiteManager.beginTransaction();
         }
+        Object[] returnValues = filterSQL(sql,sqlParam.params());
 
-        boolean success = sqLiteManager.executeUpdate(sql,params);
+        String filterSQL = (String) returnValues[0];
+        String[] filterParams = (String[])returnValues[1];
+
+        boolean success = sqLiteManager.executeUpdate(filterSQL,filterParams);
 
         if (beginTransaction){
             sqLiteManager.endTransaction();
@@ -173,11 +179,12 @@ public class Repository {
     }
 
     public Map<String,Object> executeSingleQuery(String sql){
-        return executeSingleQuery(sql,null);
+        return executeSingleQuery(sql,SQLParam.createInstance());
     }
 
-    public Map<String,Object> executeSingleQuery(String sql,String[] params){
-        List<Map<String,Object>> results = executeQuery(sql,params);
+    public Map<String,Object> executeSingleQuery(String sql,SQLParam sqlParam){
+
+        List<Map<String,Object>> results = executeQuery(sql,sqlParam);
         if (results!=null && results.size() > 0) {
             return results.get(0);
         }
@@ -185,22 +192,29 @@ public class Repository {
     }
 
     public List<Map<String,Object>> executeQuery(String sql){
-        return executeQuery(sql,null);
+        return executeQuery(sql,SQLParam.createInstance());
     }
 
-    public List<Map<String,Object>> executeQuery(final String sql,final String[] params){
+    public List<Map<String,Object>> executeQuery(final String sql,final SQLParam sqlParam){
 
         return inTransactionBlock(new InTransactionWrap() {
             @Override
             public Object executeInTransaction() {
-                List<Map<String,Object>> results = sqLiteManager.executeQuery(sql,params);
+
+                Object[] returnValues = filterSQL(sql,sqlParam.params());
+
+                String filterSQL = (String) returnValues[0];
+                String[] filterParams = (String[])returnValues[1];
+
+
+                List<Map<String,Object>> results = sqLiteManager.executeQuery(filterSQL,filterParams);
                 return results;
             }
         },List.class);
     }
 
 
-    public boolean executeInTransaction(final RepositoryBlock block){
+    public boolean executeInTransaction(final TransactionBlock block){
         return inTransactionBlock(new InTransactionWrap() {
             @Override
             public Object executeInTransaction() {
@@ -209,6 +223,58 @@ public class Repository {
         },Boolean.class);
     }
 
+
+    private Object[] filterSQL(String sql,Object[] params){
+        List<String> paramsList = new ArrayList<>();
+        Object[] returnValue = new Object[2];
+        int index = 0;
+        for (int i = 0;i<params.length; i++){
+            Object value = params[i];
+            String stringValue = null;
+
+            if (value instanceof Object[]){
+                Object[] arraysValue = (Object[])value;
+                int count = arraysValue.length;
+
+                int findIndex = findParamIndex(sql,index);
+                String replaceBefore = sql.substring(0,findIndex);
+                StringBuffer appendAsk = new StringBuffer();
+                for(int j = 1;j<count;j++){
+                    appendAsk.append("?,");
+                }
+
+                String replaceAfter = replaceBefore + appendAsk.toString();
+
+                sql = sql.replace(replaceBefore,replaceAfter);
+
+                index += count;
+
+                for (Object arrayValue:arraysValue){
+                    paramsList.add(arrayValue.toString());
+                }
+            }
+            else if (value instanceof Object){
+                stringValue = value.toString();
+                index += 1;
+                paramsList.add(stringValue);
+            }
+        }
+
+        returnValue[0] = sql;
+        returnValue[1] = paramsList.toArray(new String[]{});
+
+        return returnValue;
+    }
+
+    private int findParamIndex(String sql,int i){
+        int begin = -1;
+        int from = 0;
+        while(begin < i){
+            from = sql.indexOf("?",from + 1);
+            begin ++ ;
+        }
+        return from;
+    }
 
     private <T> T inTransactionBlock(InTransactionWrap inTransactionWrap,Class<T> c){
         boolean beginTransaction = false;
@@ -229,4 +295,6 @@ public class Repository {
     interface InTransactionWrap{
         Object executeInTransaction();
     }
+
+
 }
