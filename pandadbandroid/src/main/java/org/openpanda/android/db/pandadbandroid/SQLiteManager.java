@@ -89,16 +89,16 @@ public class SQLiteManager {
     }
 
 
-    public List<Map<String, Object>> executeQuery(String sql) {
+    public List<SQLResult> executeQuery(String sql) {
         return executeQuery(sql,null);
     }
 
-    public List<Map<String, Object>> executeQuery(String sql,String[] params) {
+    public List<SQLResult> executeQuery(String sql,String[] params) {
 
         try{
             Cursor cursor = sqLiteOpenHelper.getReadableDatabase().rawQuery(sql, params);
 
-            List<Map<String, Object>> results = new ArrayList<>();
+            List<SQLResult> results = new ArrayList<>();
 
             while (cursor.moveToNext()) {
                 Map<String, Object> result = new HashMap<>();
@@ -130,7 +130,9 @@ public class SQLiteManager {
                         }
                     }
                 }
-                results.add(result);
+
+
+                results.add(SQLResult.createInstance(result));
             }
             return results;
         }catch(Exception e){

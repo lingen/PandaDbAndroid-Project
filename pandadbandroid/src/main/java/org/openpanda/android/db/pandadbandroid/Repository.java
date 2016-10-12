@@ -113,9 +113,9 @@ public class Repository {
 
         sqLiteManager.beginTransaction();
 
-        List<Map<String, Object>> queryVersionList = sqLiteManager.executeQuery(QUERY_CURRENT_VERSION);
+        List<SQLResult> queryVersionList = sqLiteManager.executeQuery(QUERY_CURRENT_VERSION);
 
-        int currentVersion = (int) queryVersionList.get(0).get("value_");
+        int currentVersion = (int) queryVersionList.get(0).getValue("value_");
 
         StringBuffer sqls = new StringBuffer();
 
@@ -178,24 +178,24 @@ public class Repository {
         return success;
     }
 
-    public Map<String,Object> executeSingleQuery(String sql){
+    public SQLResult executeSingleQuery(String sql){
         return executeSingleQuery(sql,SQLParam.createInstance());
     }
 
-    public Map<String,Object> executeSingleQuery(String sql,SQLParam sqlParam){
+    public SQLResult executeSingleQuery(String sql,SQLParam sqlParam){
 
-        List<Map<String,Object>> results = executeQuery(sql,sqlParam);
+        List<SQLResult> results = executeQuery(sql,sqlParam);
         if (results!=null && results.size() > 0) {
             return results.get(0);
         }
         return null;
     }
 
-    public List<Map<String,Object>> executeQuery(String sql){
+    public List<SQLResult> executeQuery(String sql){
         return executeQuery(sql,SQLParam.createInstance());
     }
 
-    public List<Map<String,Object>> executeQuery(final String sql,final SQLParam sqlParam){
+    public List<SQLResult> executeQuery(final String sql,final SQLParam sqlParam){
 
         return inTransactionBlock(new InTransactionWrap() {
             @Override
@@ -207,7 +207,7 @@ public class Repository {
                 String[] filterParams = (String[])returnValues[1];
 
 
-                List<Map<String,Object>> results = sqLiteManager.executeQuery(filterSQL,filterParams);
+                List<SQLResult> results = sqLiteManager.executeQuery(filterSQL,filterParams);
                 return results;
             }
         },List.class);

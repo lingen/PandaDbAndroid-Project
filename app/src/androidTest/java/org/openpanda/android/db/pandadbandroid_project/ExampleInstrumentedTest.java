@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openpanda.android.db.pandadbandroid.Repository;
 import org.openpanda.android.db.pandadbandroid.SQLParam;
+import org.openpanda.android.db.pandadbandroid.SQLResult;
 import org.openpanda.android.db.pandadbandroid.SQLiteManager;
 import org.openpanda.android.db.pandadbandroid.Table;
 import org.openpanda.android.db.pandadbandroid.TableBuilder;
@@ -45,7 +46,7 @@ public class ExampleInstrumentedTest {
 
         SQLiteManager sqLiteManager = SQLiteManager.createInstance(appContext,"abc");
 
-        List<Map<String, Object>> results =  sqLiteManager.executeQuery("select * from user");
+        List<SQLResult> results =  sqLiteManager.executeQuery("select * from user");
 
         System.out.println(results);
 
@@ -124,12 +125,12 @@ public class ExampleInstrumentedTest {
 
         //带参数的查询
         //查询测试
-        List<Map<String,Object>> results = repository.executeQuery("select * from user_");
+        List<SQLResult> results = repository.executeQuery("select * from user_");
         assertTrue(results.size() > 0);
 
         sqlParam = SQLParam.createInstance().addStringArray(new String[]{"lingen1","lingen"});
 
-        List<Map<String,Object>> queryReusts = repository.executeQuery("select * from user_ where name_ in (?)",sqlParam);
+        List<SQLResult> queryReusts = repository.executeQuery("select * from user_ where name_ in (?)",sqlParam);
 
         assertTrue(queryReusts.size() > 0);
     }
@@ -138,7 +139,8 @@ public class ExampleInstrumentedTest {
         String sql = "insert into user_ (name_,age_,weight_,data_) values (?,?,?,?)";
 
 
-        SQLParam sqlParam = SQLParam.createInstance().addString("lingen1")
+        SQLParam sqlParam = SQLParam.createInstance()
+                .addString("lingen1")
                 .addString("123")
                 .addString("123.12")
                 .addString("123");
