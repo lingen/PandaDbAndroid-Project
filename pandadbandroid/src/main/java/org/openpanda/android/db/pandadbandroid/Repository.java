@@ -283,7 +283,16 @@ public class Repository {
             sqLiteManager.beginTransaction();
         }
 
-        Object object = inTransactionWrap.executeInTransaction();
+        Object object = null;
+
+        if (beginTransaction){
+            synchronized (this){
+                object = inTransactionWrap.executeInTransaction();
+            }
+        }else{
+            object = inTransactionWrap.executeInTransaction();
+        }
+
 
         if (beginTransaction){
             sqLiteManager.endTransaction();

@@ -15,6 +15,7 @@ import org.openpanda.android.db.pandadbandroid.Table;
 import org.openpanda.android.db.pandadbandroid.TableBuilder;
 import org.openpanda.android.db.pandadbandroid.TableCreate;
 import org.openpanda.android.db.pandadbandroid.TableUpdate;
+import org.openpanda.android.db.pandadbandroid.TransactionBlock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +87,7 @@ public class ExampleInstrumentedTest {
             }
         };
 
-        final Repository repository = Repository.createInstance(appContext,"abc",2, tableCreates,tableUpdate);
+        final Repository repository = Repository.createInstance(appContext,"abc",1, tableCreates,tableUpdate);
 
         boolean tableExists = repository.tableExists("user_");
 
@@ -109,19 +110,21 @@ public class ExampleInstrumentedTest {
 
 
 
-//        //批量插入
-//        repository.executeInTransaction(new TransactionBlock() {
-//            @Override
-//            public boolean execute() {
-//                long begin = System.currentTimeMillis();
-//                for (int i =0 ;i<10;i++){
-//                    insertOne(repository);
-//                }
-//                long end = (System.currentTimeMillis() - begin);
-//                Log.e("TIME",String.valueOf(end));
-//                return true;
-//            }
-//        });
+        //批量插入
+        repository.executeInTransaction(new TransactionBlock() {
+            @Override
+            public boolean execute() {
+                long begin = System.currentTimeMillis();
+                for (int i =0 ;i<10;i++){
+                    insertOne(repository);
+                }
+                long end = (System.currentTimeMillis() - begin);
+                Log.e("TIME",String.valueOf(end));
+                return true;
+            }
+        });
+
+
 
         //带参数的查询
         //查询测试
