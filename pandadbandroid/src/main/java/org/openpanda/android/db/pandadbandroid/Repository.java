@@ -155,7 +155,7 @@ public class Repository {
     }
 
     public boolean executeUpdate(String sql){
-        return executeUpdate(sql,null);
+        return executeUpdate(sql,SQLParam.createInstance());
     }
 
     public boolean executeUpdate(String sql,SQLParam sqlParam){
@@ -277,25 +277,15 @@ public class Repository {
     }
 
     private <T> T inTransactionBlock(InTransactionWrap inTransactionWrap,Class<T> c){
-        boolean beginTransaction = false;
-        if (!sqLiteManager.isInTransaction()){
-            beginTransaction = true;
-            sqLiteManager.beginTransaction();
-        }
-
         Object object = null;
-
-        if (beginTransaction){
+        if (!sqLiteManager.isInTransaction()){
             synchronized (this){
+                sqLiteManager.beginTransaction();
                 object = inTransactionWrap.executeInTransaction();
+                sqLiteManager.endTransaction();
             }
         }else{
             object = inTransactionWrap.executeInTransaction();
-        }
-
-
-        if (beginTransaction){
-            sqLiteManager.endTransaction();
         }
 
         return (T)object;

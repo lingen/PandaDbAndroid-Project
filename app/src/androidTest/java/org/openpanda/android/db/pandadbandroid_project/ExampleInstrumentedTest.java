@@ -109,6 +109,9 @@ public class ExampleInstrumentedTest {
         assertTrue(success);
 
 
+        repository.executeUpdate("delete from user_");
+
+
 
         //批量插入
         repository.executeInTransaction(new TransactionBlock() {
