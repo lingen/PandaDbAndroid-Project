@@ -44,7 +44,6 @@ public class ExampleInstrumentedTest {
     public void test1() {
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-
         SQLiteManager sqLiteManager = SQLiteManager.createInstance(appContext,"abc");
 
         List<SQLResult> results =  sqLiteManager.executeQuery("select * from user");
