@@ -200,7 +200,7 @@ public class Repository {
     }
 
 
-    public boolean executeInTransaction(final RepositoryBlock block){
+    public boolean executeInTransaction(final TransactionBlock block){
         return inTransactionBlock(new InTransactionWrap() {
             @Override
             public Object executeInTransaction() {

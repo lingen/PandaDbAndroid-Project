@@ -2,15 +2,13 @@ package org.openpanda.android.db.pandadbandroid_project;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
-import android.support.test.espresso.core.deps.guava.cache.LoadingCache;
-import android.support.test.espresso.core.deps.guava.reflect.TypeResolver;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openpanda.android.db.pandadbandroid.Repository;
-import org.openpanda.android.db.pandadbandroid.RepositoryBlock;
+import org.openpanda.android.db.pandadbandroid.TransactionBlock;
 import org.openpanda.android.db.pandadbandroid.SQLiteManager;
 import org.openpanda.android.db.pandadbandroid.Table;
 import org.openpanda.android.db.pandadbandroid.TableBuilder;
@@ -97,14 +95,14 @@ public class ExampleInstrumentedTest {
         //插入测试
         String sql = "insert into user_ (name_,age_,weight_,data_) values (?,?,?,?)";
 
-        boolean success = repository.executeUpdate(sql,new String[]{"lingen","123","12.12","123"});
+        boolean success = repository.executeUpdate(sql,new String[]{"lingen1","123","12.12","123"});
 
         assertTrue(success);
 
 
 
         //批量插入
-        repository.executeInTransaction(new RepositoryBlock() {
+        repository.executeInTransaction(new TransactionBlock() {
             @Override
             public boolean execute() {
                 long begin = System.currentTimeMillis();
@@ -123,11 +121,16 @@ public class ExampleInstrumentedTest {
         assertTrue(results.size() > 0);
 
 
+        String querySQL = "select * from user_ where name_ in (?)";
+
+        List<Map<String,Object>> aaa = repository.executeQuery(querySQL,new String[]{"lingen,lingen1"});
+
+        System.out.println(aaa);
+
     }
 
     private void insertOne(Repository repository){
         String sql = "insert into user_ (name_,age_,weight_,data_) values (?,?,?,?)";
-
         repository.executeUpdate(sql,new String[]{"lingen","123","12.12","123"});
     }
 }
