@@ -11,7 +11,8 @@ public class TableBuilderUnitTest {
     @Test
     public void testCreateTableWithoutPrimayColumnsAndWithoutIndexColumns() {
 
-        Table table = TableBuilder.createInstance("user_").textColumn("name_")
+        Table table = TableBuilder.createInstance("user_")
+                .textColumn("name_")
                 .intColumn("age_")
                 .realColumn("weight_")
                 .blobColumn("data_")

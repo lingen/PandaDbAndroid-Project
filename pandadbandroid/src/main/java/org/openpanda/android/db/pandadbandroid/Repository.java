@@ -2,7 +2,9 @@ package org.openpanda.android.db.pandadbandroid;
 
 import android.content.Context;
 import android.util.Log;
+import android.util.StringBuilderPrinter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -111,9 +113,9 @@ public class Repository {
 
         sqLiteManager.beginTransaction();
 
-        List<Map<String, Object>> queryVersionList = sqLiteManager.executeQuery(QUERY_CURRENT_VERSION);
+        List<SQLResult> queryVersionList = sqLiteManager.executeQuery(QUERY_CURRENT_VERSION);
 
-        int currentVersion = (int) queryVersionList.get(0).get("value_");
+        int currentVersion = (int) queryVersionList.get(0).getValue("value_");
 
         StringBuffer sqls = new StringBuffer();
 
@@ -153,18 +155,22 @@ public class Repository {
     }
 
     public boolean executeUpdate(String sql){
-        return executeUpdate(sql,null);
+        return executeUpdate(sql,SQLParam.createInstance());
     }
 
-    public boolean executeUpdate(String sql,String[] params){
+    public boolean executeUpdate(String sql,SQLParam sqlParam){
 
         boolean beginTransaction = false;
         if (!sqLiteManager.isInTransaction()){
             beginTransaction = true;
             sqLiteManager.beginTransaction();
         }
+        Object[] returnValues = filterSQL(sql,sqlParam.params());
 
-        boolean success = sqLiteManager.executeUpdate(sql,params);
+        String filterSQL = (String) returnValues[0];
+        String[] filterParams = (String[])returnValues[1];
+
+        boolean success = sqLiteManager.executeUpdate(filterSQL,filterParams);
 
         if (beginTransaction){
             sqLiteManager.endTransaction();
@@ -172,28 +178,36 @@ public class Repository {
         return success;
     }
 
-    public Map<String,Object> executeSingleQuery(String sql){
-        return executeSingleQuery(sql,null);
+    public SQLResult executeSingleQuery(String sql){
+        return executeSingleQuery(sql,SQLParam.createInstance());
     }
 
-    public Map<String,Object> executeSingleQuery(String sql,String[] params){
-        List<Map<String,Object>> results = executeQuery(sql,params);
+    public SQLResult executeSingleQuery(String sql,SQLParam sqlParam){
+
+        List<SQLResult> results = executeQuery(sql,sqlParam);
         if (results!=null && results.size() > 0) {
             return results.get(0);
         }
         return null;
     }
 
-    public List<Map<String,Object>> executeQuery(String sql){
-        return executeQuery(sql,null);
+    public List<SQLResult> executeQuery(String sql){
+        return executeQuery(sql,SQLParam.createInstance());
     }
 
-    public List<Map<String,Object>> executeQuery(final String sql,final String[] params){
+    public List<SQLResult> executeQuery(final String sql,final SQLParam sqlParam){
 
         return inTransactionBlock(new InTransactionWrap() {
             @Override
             public Object executeInTransaction() {
-                List<Map<String,Object>> results = sqLiteManager.executeQuery(sql,params);
+
+                Object[] returnValues = filterSQL(sql,sqlParam.params());
+
+                String filterSQL = (String) returnValues[0];
+                String[] filterParams = (String[])returnValues[1];
+
+
+                List<SQLResult> results = sqLiteManager.executeQuery(filterSQL,filterParams);
                 return results;
             }
         },List.class);
@@ -210,17 +224,68 @@ public class Repository {
     }
 
 
-    private <T> T inTransactionBlock(InTransactionWrap inTransactionWrap,Class<T> c){
-        boolean beginTransaction = false;
-        if (!sqLiteManager.isInTransaction()){
-            beginTransaction = true;
-            sqLiteManager.beginTransaction();
+    private Object[] filterSQL(String sql,Object[] params){
+        List<String> paramsList = new ArrayList<>();
+        Object[] returnValue = new Object[2];
+        int index = 0;
+        for (int i = 0;i<params.length; i++){
+            Object value = params[i];
+            String stringValue = null;
+
+            if (value instanceof Object[]){
+                Object[] arraysValue = (Object[])value;
+                int count = arraysValue.length;
+
+                int findIndex = findParamIndex(sql,index);
+                String replaceBefore = sql.substring(0,findIndex);
+                StringBuffer appendAsk = new StringBuffer();
+                for(int j = 1;j<count;j++){
+                    appendAsk.append("?,");
+                }
+
+                String replaceAfter = replaceBefore + appendAsk.toString();
+
+                sql = sql.replace(replaceBefore,replaceAfter);
+
+                index += count;
+
+                for (Object arrayValue:arraysValue){
+                    paramsList.add(arrayValue.toString());
+                }
+            }
+            else if (value instanceof Object){
+                stringValue = value.toString();
+                index += 1;
+                paramsList.add(stringValue);
+            }
         }
 
-        Object object = inTransactionWrap.executeInTransaction();
+        returnValue[0] = sql;
+        returnValue[1] = paramsList.toArray(new String[]{});
 
-        if (beginTransaction){
-            sqLiteManager.endTransaction();
+        return returnValue;
+    }
+
+    private int findParamIndex(String sql,int i){
+        int begin = -1;
+        int from = 0;
+        while(begin < i){
+            from = sql.indexOf("?",from + 1);
+            begin ++ ;
+        }
+        return from;
+    }
+
+    private <T> T inTransactionBlock(InTransactionWrap inTransactionWrap,Class<T> c){
+        Object object = null;
+        if (!sqLiteManager.isInTransaction()){
+            synchronized (this){
+                sqLiteManager.beginTransaction();
+                object = inTransactionWrap.executeInTransaction();
+                sqLiteManager.endTransaction();
+            }
+        }else{
+            object = inTransactionWrap.executeInTransaction();
         }
 
         return (T)object;
@@ -229,4 +294,6 @@ public class Repository {
     interface InTransactionWrap{
         Object executeInTransaction();
     }
+
+
 }

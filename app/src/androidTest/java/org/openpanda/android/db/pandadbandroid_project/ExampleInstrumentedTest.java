@@ -8,12 +8,14 @@ import android.util.Log;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openpanda.android.db.pandadbandroid.Repository;
-import org.openpanda.android.db.pandadbandroid.TransactionBlock;
+import org.openpanda.android.db.pandadbandroid.SQLParam;
+import org.openpanda.android.db.pandadbandroid.SQLResult;
 import org.openpanda.android.db.pandadbandroid.SQLiteManager;
 import org.openpanda.android.db.pandadbandroid.Table;
 import org.openpanda.android.db.pandadbandroid.TableBuilder;
 import org.openpanda.android.db.pandadbandroid.TableCreate;
 import org.openpanda.android.db.pandadbandroid.TableUpdate;
+import org.openpanda.android.db.pandadbandroid.TransactionBlock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +47,7 @@ public class ExampleInstrumentedTest {
 
         SQLiteManager sqLiteManager = SQLiteManager.createInstance(appContext,"abc");
 
-        List<Map<String, Object>> results =  sqLiteManager.executeQuery("select * from user");
+        List<SQLResult> results =  sqLiteManager.executeQuery("select * from user");
 
         System.out.println(results);
 
@@ -85,7 +87,7 @@ public class ExampleInstrumentedTest {
             }
         };
 
-        final Repository repository = Repository.createInstance(appContext,"abc",2, tableCreates,tableUpdate);
+        final Repository repository = Repository.createInstance(appContext,"abc",1, tableCreates,tableUpdate);
 
         boolean tableExists = repository.tableExists("user_");
 
@@ -95,9 +97,19 @@ public class ExampleInstrumentedTest {
         //插入测试
         String sql = "insert into user_ (name_,age_,weight_,data_) values (?,?,?,?)";
 
-        boolean success = repository.executeUpdate(sql,new String[]{"lingen1","123","12.12","123"});
+        SQLParam sqlParam = SQLParam.createInstance()
+                .addString("lingen")
+                .addString("123")
+                .addString("12.12")
+                .addString("123");
+
+
+        boolean success = repository.executeUpdate(sql,sqlParam);
 
         assertTrue(success);
+
+
+        repository.executeUpdate("delete from user_");
 
 
 
@@ -106,7 +118,7 @@ public class ExampleInstrumentedTest {
             @Override
             public boolean execute() {
                 long begin = System.currentTimeMillis();
-                for (int i =0 ;i<10000;i++){
+                for (int i =0 ;i<10;i++){
                     insertOne(repository);
                 }
                 long end = (System.currentTimeMillis() - begin);
@@ -115,23 +127,31 @@ public class ExampleInstrumentedTest {
             }
         });
 
+
+
         //带参数的查询
         //查询测试
-        List<Map<String,Object>> results = repository.executeQuery("select * from user_");
+        List<SQLResult> results = repository.executeQuery("select * from user_");
         assertTrue(results.size() > 0);
 
+        sqlParam = SQLParam.createInstance().addStringArray(new String[]{"lingen1","lingen"});
 
-        String querySQL = "select * from user_ where name_ in (?)";
+        List<SQLResult> queryReusts = repository.executeQuery("select * from user_ where name_ in (?)",sqlParam);
 
-        List<Map<String,Object>> aaa = repository.executeQuery(querySQL,new String[]{"lingen,lingen1"});
-
-        System.out.println(aaa);
-
+        assertTrue(queryReusts.size() > 0);
     }
 
     private void insertOne(Repository repository){
         String sql = "insert into user_ (name_,age_,weight_,data_) values (?,?,?,?)";
-        repository.executeUpdate(sql,new String[]{"lingen","123","12.12","123"});
+
+
+        SQLParam sqlParam = SQLParam.createInstance()
+                .addString("lingen1")
+                .addString("123")
+                .addString("123.12")
+                .addString("123");
+
+        repository.executeUpdate(sql,sqlParam);
     }
 }
 
